@@ -1,0 +1,10 @@
+{
+  "name": "@fincafe/fincafe-e2e",
+  "version": "0.0.1",
+  "private": true,
+  "nx": {
+    "implicitDependencies": [
+      "@fincafe/fincafe"
+    ]
+  }
+}
