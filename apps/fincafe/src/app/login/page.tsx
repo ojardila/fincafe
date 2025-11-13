@@ -132,6 +132,15 @@ export default function LoginPage() {
               </div>
             </div>
           </div>
+
+          <div className="mt-6 pt-6 border-t border-gray-200 text-center">
+            <p className="text-sm text-gray-600">
+              Are you a farm user?{' '}
+              <a href="/farm-login" className="text-green-600 hover:text-green-700 font-semibold">
+                Farm Login
+              </a>
+            </p>
+          </div>
         </div>
       </div>
     </div>

@@ -8,7 +8,9 @@ A user management system built with Next.js, Prisma, PostgreSQL, and Nx monorepo
 - 👥 User management (CRUD operations)
 - 🎭 Role-based access control (RBAC)
 - 🔑 Permissions system
+- 🏢 Multi-tenant farm system with isolated databases
 - 📊 Admin dashboard
+- 🌾 Farm-specific user management
 - 🐳 Docker Compose for local development
 
 ## Tech Stack
@@ -105,7 +107,9 @@ npx prisma db seed
 
 This will create:
 - **3 Roles:** Super Admin, Admin, Employee
-- **10 Permissions:** users.create, users.read, users.update, users.delete, roles.create, roles.read, roles.update, roles.delete, permissions.read, permissions.update
+- **14 Permissions:** Including user, role, permission, and farm management
+- **Demo Super Admin User:** Email: `admin@fincafe.com`, Password: `admin123`
+- **Demo Farm:** A sample farm called "Demo Farm" with code `demo-farm`
 
 ### 8. Start the Development Server
 
@@ -121,7 +125,11 @@ The application will be available at: **http://localhost:4200**
 
 #### Default Credentials
 
-After seeding, you can create users through the admin interface. For initial access, you'll need to create a user manually or update the seed script.
+After seeding, you can log in with:
+- **Email:** `admin@fincafe.com`
+- **Password:** `admin123`
+
+⚠️ **Security Warning:** Change this password immediately in production!
 
 #### Application Routes
 
@@ -130,6 +138,17 @@ After seeding, you can create users through the admin interface. For initial acc
 - **Admin Dashboard:** http://localhost:4200/admin/users
 - **Roles Management:** http://localhost:4200/admin/roles
 - **Permissions View:** http://localhost:4200/admin/permissions
+- **Farms Management:** http://localhost:4200/admin/farms
+- **Farm Access:** http://localhost:4200/farm/[farmCode] (e.g., /farm/demo-farm)
+
+### 10. Initialize Farm Database (Optional)
+
+To use the demo farm, you need to initialize its database:
+
+1. Log in to the admin panel
+2. Go to **Farms** section
+3. Click **Initialize DB** on the Demo Farm card
+4. Once initialized, click **Open Farm** to access the farm's isolated workspace
 
 ## Project Structure
 
@@ -142,10 +161,18 @@ fincafe/
 │           │   ├── admin/    # Admin section (protected)
 │           │   │   ├── users/       # User management UI
 │           │   │   ├── roles/       # Role management UI
-│           │   │   └── permissions/ # Permissions view
+│           │   │   ├── permissions/ # Permissions view
+│           │   │   └── farms/       # Farm management UI
+│           │   ├── farm/     # Farm-specific section
+│           │   │   └── [farmCode]/  # Dynamic farm routes
+│           │   │       └── users/   # Farm user management
 │           │   ├── api/      # API routes
 │           │   │   ├── users/       # User CRUD API
 │           │   │   ├── roles/       # Role CRUD API
+│           │   │   ├── farms/       # Farm CRUD API
+│           │   │   └── farm/        # Farm-specific APIs
+│           │   │       └── [farmCode]/
+│           │   │           └── users/ # Farm user API
 │           │   │   ├── permissions/ # Permissions API
 │           │   │   └── auth/        # Authentication API
 │           │   └── login/    # Login page
@@ -186,6 +213,19 @@ fincafe/
 - `createdAt`: DateTime
 - `updatedAt`: DateTime
 - Relations: `roles[]` (many-to-many)
+
+### Farm Model (Multi-Tenancy)
+- `id`: String (UUID)
+- `name`: String (farm display name)
+- `code`: String (unique, URL-safe identifier)
+- `databaseName`: String (unique, e.g., "customer_demo_farm")
+- `description`: String (optional)
+- `isActive`: Boolean (default: true)
+- `createdById`: String (FK to User - super admin who created it)
+- `createdAt`: DateTime
+- `updatedAt`: DateTime
+
+**Note:** Each farm has its own isolated PostgreSQL database with the same schema (User, Role, Permission models).
 
 ## Available Commands
 
@@ -270,6 +310,21 @@ npx nx start fincafe
 ### Permissions
 - `GET /api/permissions` - List all permissions
 
+### Farms (Super Admin Only)
+- `GET /api/farms` - List all farms
+- `POST /api/farms` - Create a new farm
+- `GET /api/farms/:id` - Get farm by ID
+- `PATCH /api/farms/:id` - Update farm
+- `DELETE /api/farms/:id` - Delete farm
+- `POST /api/farms/:id/initialize` - Initialize farm database
+
+### Farm-Specific Users
+- `GET /api/farm/:farmCode/users` - List users in a farm
+- `POST /api/farm/:farmCode/users` - Create user in a farm
+- `GET /api/farm/:farmCode/users/:id` - Get farm user by ID
+- `PATCH /api/farm/:farmCode/users/:id` - Update farm user
+- `DELETE /api/farm/:farmCode/users/:id` - Delete farm user
+
 ## Troubleshooting
 
 ### Database Connection Issues
@@ -302,6 +357,48 @@ If port 4200 or 5432 is already in use:
 
 - For Next.js: Change port with `PORT=3000 npx nx dev fincafe`
 - For PostgreSQL: Update `docker-compose.yml` ports and `DATABASE_URL` in `.env`
+
+### Farm Database Not Initializing
+
+If farm database initialization fails:
+
+1. Ensure main database is running: `docker ps`
+2. Check PostgreSQL user has CREATE DATABASE permission
+3. Verify the database name doesn't already exist
+4. Check logs in the browser console or terminal
+
+## Multi-Tenant Architecture
+
+### How It Works
+
+FinCafe implements a **database-per-tenant** multi-tenancy model:
+
+1. **Main Database** (`fincafe_dev`):
+   - Stores global users, roles, permissions
+   - Stores farm metadata (Farm model)
+   - Admin operations happen here
+
+2. **Farm Databases** (`customer_<farmCode>`):
+   - Each farm has its own isolated PostgreSQL database
+   - Same schema as main database (User, Role, Permission models)
+   - Complete data isolation between farms
+   - Farm-specific operations use dynamic database connections
+
+### Creating a New Farm
+
+1. Log in as super admin
+2. Navigate to **Admin → Farms**
+3. Click **Create New Farm**
+4. Fill in farm details (name, code)
+5. Click **Initialize DB** to create and migrate the farm database
+6. Access the farm at `/farm/<farm-code>`
+
+### Farm Database Management
+
+- **Dynamic Connections:** Farm databases are accessed using Prisma client with dynamic connection strings
+- **Migrations:** When you run `npx prisma migrate deploy`, it applies to the main database. Farm databases are initialized with the same schema when you click "Initialize DB"
+- **Isolation:** Each farm's data is completely separate - no shared users, roles, or permissions
+- **Scalability:** This architecture allows horizontal scaling by distributing farm databases across multiple PostgreSQL servers
 
 ## Security Notes
 

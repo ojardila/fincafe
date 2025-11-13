@@ -125,11 +125,6 @@ async function main() {
     )
     .map((p) => p.id);
 
-  // Employee permissions (read only)
-  const employeePermissions = allPermissions
-    .filter((p) => p.action === 'read')
-    .map((p) => p.id);
-
   // Create roles
   const superAdmin = await prisma.role.upsert({
     where: { name: 'super_admin' },
@@ -155,23 +150,96 @@ async function main() {
     },
   });
 
-  const employee = await prisma.role.upsert({
-    where: { name: 'employee' },
+  console.log('Created roles:', {
+    superAdmin: superAdmin.name,
+    admin: admin.name,
+  });
+
+  // Create a super admin user
+  const superAdminUser = await prisma.user.upsert({
+    where: { email: 'admin@fincafe.com' },
     update: {},
     create: {
-      name: 'employee',
-      description: 'Employee with read-only access',
+      email: 'admin@fincafe.com',
+      name: 'Super Admin',
+      password: 'admin123', // In production, use bcrypt!
+      roleId: superAdmin.id,
+    },
+  });
+
+  console.log('Created super admin user:', superAdminUser.email);
+
+  // Create farm permissions
+  const farmPermissions = await Promise.all([
+    prisma.permission.upsert({
+      where: { name: 'farms.create' },
+      update: {},
+      create: {
+        name: 'farms.create',
+        description: 'Create new farms',
+        resource: 'farms',
+        action: 'create',
+      },
+    }),
+    prisma.permission.upsert({
+      where: { name: 'farms.read' },
+      update: {},
+      create: {
+        name: 'farms.read',
+        description: 'View farms',
+        resource: 'farms',
+        action: 'read',
+      },
+    }),
+    prisma.permission.upsert({
+      where: { name: 'farms.update' },
+      update: {},
+      create: {
+        name: 'farms.update',
+        description: 'Update farms',
+        resource: 'farms',
+        action: 'update',
+      },
+    }),
+    prisma.permission.upsert({
+      where: { name: 'farms.delete' },
+      update: {},
+      create: {
+        name: 'farms.delete',
+        description: 'Delete farms',
+        resource: 'farms',
+        action: 'delete',
+      },
+    }),
+  ]);
+
+  console.log('Created farm permissions:', farmPermissions.length);
+
+  // Update super admin role with farm permissions
+  await prisma.role.update({
+    where: { id: superAdmin.id },
+    data: {
       permissions: {
-        connect: employeePermissions.map((id) => ({ id })),
+        connect: farmPermissions.map((p) => ({ id: p.id })),
       },
     },
   });
 
-  console.log('Created roles:', {
-    superAdmin: superAdmin.name,
-    admin: admin.name,
-    employee: employee.name,
+  // Create a demo farm
+  const demoFarm = await prisma.farm.upsert({
+    where: { code: 'demo-farm' },
+    update: {},
+    create: {
+      name: 'Demo Farm',
+      code: 'demo-farm',
+      databaseName: 'customer_demo_farm',
+      description: 'A demonstration farm for testing purposes',
+      createdById: superAdminUser.id,
+      isActive: true,
+    },
   });
+
+  console.log('Created demo farm:', demoFarm.name);
 
   console.log('Seed completed successfully!');
 }

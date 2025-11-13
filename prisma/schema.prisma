@@ -14,14 +14,39 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  password  String
-  roleId    String?
-  role      Role?    @relation(fields: [roleId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                String    @id @default(cuid())
+  email             String    @unique
+  username          String?   @unique
+  name              String?
+  firstName         String?
+  lastName          String?
+  phone             String?
+  birthDate         DateTime?
+  description       String?
+  profilePicture    String?
+  // Address information
+  address           String?
+  city              String?
+  state             String?
+  country           String?
+  postalCode        String?
+  // Emergency contact
+  emergencyContact  String?
+  emergencyPhone    String?
+  // Employment information
+  position          String?
+  department        String?
+  hireDate          DateTime?
+  // Additional info
+  nationality       String?
+  idNumber          String?
+  
+  password          String
+  roleId            String?
+  role              Role?     @relation(fields: [roleId], references: [id])
+  farms             Farm[]    // Farms created by this user
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 }
 
 model Role {
@@ -43,4 +68,68 @@ model Permission {
   roles       Role[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model Farm {
+  id           String   @id @default(cuid())
+  name         String
+  code         String   @unique // URL-safe identifier
+  databaseName String   @unique // e.g., "customer_farm1"
+  description  String?
+  isActive     Boolean  @default(true)
+  createdById  String   // Super admin who created the farm
+  createdBy    User     @relation(fields: [createdById], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// Plot Management Models (per-farm database)
+model Plot {
+  id           String     @id @default(cuid())
+  name         String     // Nombre del Lote
+  totalArea    Float      // Superficie total (hectares)
+  department   String     // Departamento
+  municipality String     // Municipio
+  map          String?    // GIS polygon data (stored as JSON string)
+  isActive     Boolean    @default(true)
+  crops        PlotCrop[] // Multiple crops per plot
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model CropType {
+  id           String     @id @default(cuid())
+  name         String     @unique // e.g., "Café", "Aguacate", "Yuca"
+  description  String?
+  plots        PlotCrop[]
+  varieties    Variety[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model Variety {
+  id           String     @id @default(cuid())
+  name         String     // e.g., "Arábica", "Robusta"
+  cropTypeId   String
+  cropType     CropType   @relation(fields: [cropTypeId], references: [id])
+  description  String?
+  plots        PlotCrop[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@unique([name, cropTypeId])
+}
+
+model PlotCrop {
+  id           String    @id @default(cuid())
+  plotId       String
+  plot         Plot      @relation(fields: [plotId], references: [id], onDelete: Cascade)
+  cropTypeId   String
+  cropType     CropType  @relation(fields: [cropTypeId], references: [id])
+  varietyId    String?
+  variety      Variety?  @relation(fields: [varietyId], references: [id])
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@unique([plotId, cropTypeId, varietyId])
 }

@@ -15,6 +15,24 @@ export async function GET(
         id: true,
         email: true,
         name: true,
+        username: true,
+        firstName: true,
+        lastName: true,
+        phone: true,
+        birthDate: true,
+        description: true,
+        address: true,
+        city: true,
+        state: true,
+        country: true,
+        postalCode: true,
+        emergencyContact: true,
+        emergencyPhone: true,
+        position: true,
+        department: true,
+        hireDate: true,
+        nationality: true,
+        idNumber: true,
         roleId: true,
         role: {
           select: {
@@ -51,7 +69,14 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { email, name, password, roleId } = body;
+    const { 
+      email, name, username, firstName, lastName, phone, birthDate, description,
+      address, city, state, country, postalCode,
+      emergencyContact, emergencyPhone,
+      position, department, hireDate,
+      nationality, idNumber,
+      password, roleId 
+    } = body;
 
     // Check if user exists
     const existingUser = await prisma.user.findUnique({
@@ -76,16 +101,43 @@ export async function PATCH(
       }
     }
 
-    // Build update data object
-    const updateData: {
-      email?: string;
-      name?: string;
-      password?: string;
-      roleId?: string | null;
-    } = {};
+    // If username is being updated, check if it's already taken
+    if (username && username !== existingUser.username) {
+      const usernameTaken = await prisma.user.findUnique({
+        where: { username },
+      });
 
-    if (email) updateData.email = email;
+      if (usernameTaken) {
+        return NextResponse.json(
+          { error: 'Username is already taken' },
+          { status: 409 }
+        );
+      }
+    }
+
+    // Build update data object
+    const updateData: Record<string, unknown> = {};
+
+    if (email !== undefined) updateData.email = email;
     if (name !== undefined) updateData.name = name;
+    if (username !== undefined) updateData.username = username;
+    if (firstName !== undefined) updateData.firstName = firstName;
+    if (lastName !== undefined) updateData.lastName = lastName;
+    if (phone !== undefined) updateData.phone = phone;
+    if (birthDate !== undefined) updateData.birthDate = birthDate ? new Date(birthDate) : null;
+    if (description !== undefined) updateData.description = description;
+    if (address !== undefined) updateData.address = address;
+    if (city !== undefined) updateData.city = city;
+    if (state !== undefined) updateData.state = state;
+    if (country !== undefined) updateData.country = country;
+    if (postalCode !== undefined) updateData.postalCode = postalCode;
+    if (emergencyContact !== undefined) updateData.emergencyContact = emergencyContact;
+    if (emergencyPhone !== undefined) updateData.emergencyPhone = emergencyPhone;
+    if (position !== undefined) updateData.position = position;
+    if (department !== undefined) updateData.department = department;
+    if (hireDate !== undefined) updateData.hireDate = hireDate ? new Date(hireDate) : null;
+    if (nationality !== undefined) updateData.nationality = nationality;
+    if (idNumber !== undefined) updateData.idNumber = idNumber;
     if (roleId !== undefined) updateData.roleId = roleId;
     if (password) {
       // TODO: Hash password before storing (use bcrypt in production)
@@ -99,6 +151,24 @@ export async function PATCH(
         id: true,
         email: true,
         name: true,
+        username: true,
+        firstName: true,
+        lastName: true,
+        phone: true,
+        birthDate: true,
+        description: true,
+        address: true,
+        city: true,
+        state: true,
+        country: true,
+        postalCode: true,
+        emergencyContact: true,
+        emergencyPhone: true,
+        position: true,
+        department: true,
+        hireDate: true,
+        nationality: true,
+        idNumber: true,
         roleId: true,
         role: {
           select: {
