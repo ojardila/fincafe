@@ -1,0 +1,35 @@
+version: '3.8'
+
+# Development-only docker-compose override
+# Use with: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+  # Development Next.js with hot reload
+  app-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: fincafe-app-dev
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://fincafe:fincafe_dev_password@postgres:5432/fincafe_dev?schema=public
+      - NEXTAUTH_URL=http://localhost:3000
+      - NEXTAUTH_SECRET=dev-secret-not-for-production
+    volumes:
+      # Mount source code for hot reload
+      - ./apps:/app/apps
+      - ./prisma:/app/prisma
+      - ./node_modules:/app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - fincafe-network
+    command: npx nx serve fincafe
+
+networks:
+  fincafe-network:
+    driver: bridge

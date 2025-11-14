@@ -264,19 +264,45 @@ npx prisma studio
 ### Docker
 
 ```bash
-# Start database
+# Start database only
+docker-compose up -d postgres
+
+# Start all services (database + app)
 docker-compose up -d
 
-# Stop database
+# Stop services
 docker-compose down
 
 # View logs
 docker-compose logs -f
 
+# Rebuild and restart
+docker-compose up -d --build
+
 # Reset database (WARNING: deletes all data)
 docker-compose down -v
 docker-compose up -d
 ```
+
+**Docker Helper Script:** For easier Docker management, use:
+
+```bash
+# Make executable (first time only)
+chmod +x docker-helper.sh
+
+# View available commands
+./docker-helper.sh help
+
+# Quick commands
+./docker-helper.sh up        # Start all services
+./docker-helper.sh down      # Stop all services
+./docker-helper.sh rebuild   # Rebuild and restart
+./docker-helper.sh logs app  # View app logs
+./docker-helper.sh migrate   # Run migrations
+./docker-helper.sh seed      # Seed database
+```
+
+For detailed Docker setup instructions, see [DOCKER.md](./DOCKER.md)
 
 ### Build
 
