@@ -45,7 +45,8 @@ export default function HarvestsPage({ params }: { params: Promise<{ farmCode: s
       const response = await fetch(`/api/farm/${farmCode}/harvests`);
       if (response.ok) {
         const data = await response.json();
-        setHarvests(data);
+        // API now returns { harvests: [...] }
+        setHarvests(data.harvests || data);
       }
     } catch (error) {
       console.error('Error fetching harvests:', error);

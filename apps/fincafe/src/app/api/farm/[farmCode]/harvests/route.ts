@@ -22,8 +22,23 @@ export async function GET(
     // Get tenant-specific Prisma client
     const tenantPrisma = getFarmDatabase(farm.databaseName);
 
+    // Get query parameters for filtering
+    const { searchParams } = new URL(request.url);
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
+
+    // Build where clause
+    const where: any = {};
+    if (startDate && endDate) {
+      where.collectionDate = {
+        gte: new Date(startDate),
+        lte: new Date(endDate),
+      };
+    }
+
     // Fetch harvests with related data
     const harvests = await tenantPrisma.harvestCollection.findMany({
+      where,
       include: {
         plot: true,
         cropType: true,
@@ -33,7 +48,7 @@ export async function GET(
       },
     });
 
-    return NextResponse.json(harvests);
+    return NextResponse.json({ harvests });
   } catch (error) {
     console.error('Error fetching harvests:', error);
     return NextResponse.json(
