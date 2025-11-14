@@ -65,15 +65,31 @@ export default function PlotForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [farmCode]);
 
+  // Load varieties for crops in initialData (edit mode)
+  useEffect(() => {
+    if (initialData?.crops) {
+      initialData.crops.forEach((crop) => {
+        if (crop.cropTypeId && !varieties[crop.cropTypeId]) {
+          fetchVarieties(crop.cropTypeId);
+        }
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialData]);
+
   const fetchCropTypes = async () => {
     try {
       const response = await fetch(`/api/farm/${farmCode}/crop-types`);
       if (response.ok) {
         const data = await response.json();
-        setCropTypes(data.cropTypes);
+        setCropTypes(data.cropTypes || []);
+      } else {
+        console.error('Failed to fetch crop types');
+        setCropTypes([]);
       }
     } catch (error) {
       console.error('Error fetching crop types:', error);
+      setCropTypes([]);
     }
   };
 
@@ -84,10 +100,14 @@ export default function PlotForm({
       );
       if (response.ok) {
         const data = await response.json();
-        setVarieties((prev) => ({ ...prev, [cropTypeId]: data.varieties }));
+        setVarieties((prev) => ({ ...prev, [cropTypeId]: data.varieties || [] }));
+      } else {
+        console.error('Failed to fetch varieties for crop type:', cropTypeId);
+        setVarieties((prev) => ({ ...prev, [cropTypeId]: [] }));
       }
     } catch (error) {
       console.error('Error fetching varieties:', error);
+      setVarieties((prev) => ({ ...prev, [cropTypeId]: [] }));
     }
   };
 

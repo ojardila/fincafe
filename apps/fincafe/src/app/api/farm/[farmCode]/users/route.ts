@@ -27,9 +27,23 @@ export async function GET(
     // Get farm database connection
     const farmDb = getFarmDatabase(farm.databaseName);
 
+    // Get query parameters
+    const { searchParams } = new URL(request.url);
+    const roleFilter = searchParams.get('role'); // e.g., ?role=employee
+
     // Fetch users from farm database
     try {
       const users = await farmDb.user.findMany({
+        where: roleFilter
+          ? {
+              role: {
+                name: {
+                  equals: roleFilter,
+                  mode: 'insensitive',
+                },
+              },
+            }
+          : undefined,
         include: {
           role: {
             select: {

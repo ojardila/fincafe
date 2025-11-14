@@ -85,26 +85,28 @@ model Farm {
 
 // Plot Management Models (per-farm database)
 model Plot {
-  id           String     @id @default(cuid())
-  name         String     // Nombre del Lote
-  totalArea    Float      // Superficie total (hectares)
-  department   String     // Departamento
-  municipality String     // Municipio
-  map          String?    // GIS polygon data (stored as JSON string)
-  isActive     Boolean    @default(true)
-  crops        PlotCrop[] // Multiple crops per plot
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  id           String              @id @default(cuid())
+  name         String              // Nombre del Lote
+  totalArea    Float               // Superficie total (hectares)
+  department   String              // Departamento
+  municipality String              // Municipio
+  map          String?             // GIS polygon data (stored as JSON string)
+  isActive     Boolean             @default(true)
+  crops        PlotCrop[]          // Multiple crops per plot
+  harvests     HarvestCollection[] // Harvest collections for this plot
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
 }
 
 model CropType {
-  id           String     @id @default(cuid())
-  name         String     @unique // e.g., "Café", "Aguacate", "Yuca"
+  id           String              @id @default(cuid())
+  name         String              @unique // e.g., "Café", "Aguacate", "Yuca"
   description  String?
   plots        PlotCrop[]
   varieties    Variety[]
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  harvests     HarvestCollection[] // Harvest collections for this crop type
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
 }
 
 model Variety {
@@ -132,4 +134,23 @@ model PlotCrop {
   updatedAt    DateTime  @updatedAt
 
   @@unique([plotId, cropTypeId, varietyId])
+}
+
+// Harvest Management Models
+model HarvestCollection {
+  id           String    @id @default(cuid())
+  plotId       String
+  plot         Plot      @relation(fields: [plotId], references: [id], onDelete: Cascade)
+  cropTypeId   String
+  cropType     CropType  @relation(fields: [cropTypeId], references: [id])
+  pickerName   String    // Name of the person who picked the coffee
+  kilograms    Float     // Weight in kg
+  collectionDate DateTime @default(now()) // Date of pickup (default current day)
+  notes        String?   // Optional notes
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([plotId])
+  @@index([cropTypeId])
+  @@index([collectionDate])
 }

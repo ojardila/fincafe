@@ -24,6 +24,7 @@ export default function FarmLayout({
     name: string | null;
     email: string;
   } | null>(null);
+  const [cropsMenuOpen, setCropsMenuOpen] = useState(false);
 
   useEffect(() => {
     // Fetch farm information
@@ -197,19 +198,108 @@ export default function FarmLayout({
                   </svg>
                   <span className="font-medium">Dashboard</span>
                 </Link>
+                
+                {/* Crops Menu with Sub-items */}
+                <div>
+                  <button
+                    onClick={() => setCropsMenuOpen(!cropsMenuOpen)}
+                    className={`flex items-center justify-between w-full px-4 py-3 rounded-xl transition-all ${
+                      pathname?.startsWith(`/farm/${farmCode}/plots`) || 
+                      pathname?.startsWith(`/farm/${farmCode}/crop-types`) || 
+                      pathname?.startsWith(`/farm/${farmCode}/varieties`)
+                        ? 'bg-green-600 text-white shadow-lg shadow-green-600/30'
+                        : 'text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                      </svg>
+                      <span className="font-medium">Crops</span>
+                    </div>
+                    <svg
+                      className={`w-5 h-5 transition-transform ${cropsMenuOpen ? 'rotate-180' : ''}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  
+                  {cropsMenuOpen && (
+                    <div className="ml-6 mt-2 space-y-1">
+                      <Link
+                        href={`/farm/${farmCode}/plots`}
+                        className={`flex items-center space-x-3 px-4 py-2 rounded-lg transition-all text-sm ${
+                          pathname?.startsWith(`/farm/${farmCode}/plots`)
+                            ? 'bg-green-100 text-green-700 font-medium'
+                            : 'text-gray-600 hover:bg-gray-50'
+                        }`}
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 17a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1v-2zM14 17a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1h-4a1 1 0 01-1-1v-2z" />
+                        </svg>
+                        <span>Plots</span>
+                      </Link>
+                      <Link
+                        href={`/farm/${farmCode}/crop-types`}
+                        className={`flex items-center space-x-3 px-4 py-2 rounded-lg transition-all text-sm ${
+                          pathname?.startsWith(`/farm/${farmCode}/crop-types`)
+                            ? 'bg-green-100 text-green-700 font-medium'
+                            : 'text-gray-600 hover:bg-gray-50'
+                        }`}
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                        <span>Crop Types</span>
+                      </Link>
+                      <Link
+                        href={`/farm/${farmCode}/varieties`}
+                        className={`flex items-center space-x-3 px-4 py-2 rounded-lg transition-all text-sm ${
+                          pathname?.startsWith(`/farm/${farmCode}/varieties`)
+                            ? 'bg-green-100 text-green-700 font-medium'
+                            : 'text-gray-600 hover:bg-gray-50'
+                        }`}
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                        </svg>
+                        <span>Varieties</span>
+                      </Link>
+                    </div>
+                  )}
+                </div>
+                
                 <Link
-                  href={`/farm/${farmCode}/plots`}
+                  href={`/farm/${farmCode}/harvests`}
                   className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-all ${
-                    pathname?.startsWith(`/farm/${farmCode}/plots`)
+                    pathname?.startsWith(`/farm/${farmCode}/harvests`)
                       ? 'bg-green-600 text-white shadow-lg shadow-green-600/30'
                       : 'text-gray-700 hover:bg-gray-50'
                   }`}
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 17a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1v-2zM14 17a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1h-4a1 1 0 01-1-1v-2z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                   </svg>
-                  <span className="font-medium">Plots</span>
+                  <span className="font-medium">Harvests</span>
                 </Link>
+                
+                <Link
+                  href={`/farm/${farmCode}/employees`}
+                  className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-all ${
+                    pathname?.startsWith(`/farm/${farmCode}/employees`)
+                      ? 'bg-green-600 text-white shadow-lg shadow-green-600/30'
+                      : 'text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                  <span className="font-medium">Employees</span>
+                </Link>
+                
                 <Link
                   href={`/farm/${farmCode}/users`}
                   className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-all ${
