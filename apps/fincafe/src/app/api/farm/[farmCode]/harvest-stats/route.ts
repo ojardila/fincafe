@@ -143,6 +143,52 @@ export async function GET(
       employeesCount: stat.employees.size,
     }));
 
+    // Calculate weekly statistics
+    const weeklyMap = new Map<string, {
+      weekStart: Date;
+      weekLabel: string;
+      totalKg: number;
+      collectionsCount: number;
+    }>();
+
+    harvests.forEach((harvest) => {
+      const date = new Date(harvest.collectionDate);
+      // Get the Monday of the week
+      const dayOfWeek = date.getDay();
+      const diff = date.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+      const monday = new Date(date.setDate(diff));
+      monday.setHours(0, 0, 0, 0);
+      
+      const weekKey = monday.toISOString().split('T')[0];
+      
+      if (!weeklyMap.has(weekKey)) {
+        const weekEnd = new Date(monday);
+        weekEnd.setDate(weekEnd.getDate() + 6);
+        weeklyMap.set(weekKey, {
+          weekStart: monday,
+          weekLabel: `${monday.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${weekEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`,
+          totalKg: 0,
+          collectionsCount: 0,
+        });
+      }
+      
+      const weeklyStat = weeklyMap.get(weekKey);
+      if (weeklyStat) {
+        weeklyStat.totalKg += harvest.kilograms;
+        weeklyStat.collectionsCount += 1;
+      }
+    });
+
+    // Convert to array and sort by date
+    const weeklyStats = Array.from(weeklyMap.values())
+      .sort((a, b) => a.weekStart.getTime() - b.weekStart.getTime())
+      .map(stat => ({
+        weekLabel: stat.weekLabel,
+        totalKg: stat.totalKg,
+        collectionsCount: stat.collectionsCount,
+        averageKgPerCollection: stat.totalKg / stat.collectionsCount,
+      }));
+
     // Calculate overview statistics
     const uniquePlots = new Set(harvests.map((h) => h.plotId));
     const overviewStats = {
@@ -160,6 +206,7 @@ export async function GET(
       employeeStats,
       cropTypeStats,
       overviewStats,
+      weeklyStats,
     });
   } catch (error) {
     console.error('Error fetching harvest stats:', error);

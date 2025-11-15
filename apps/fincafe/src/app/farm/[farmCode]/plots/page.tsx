@@ -62,12 +62,22 @@ export default function PlotsPage() {
         method: 'DELETE',
       });
 
-      if (!response.ok) throw new Error('Failed to delete plot');
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (response.status === 400 && data.harvestCount) {
+          alert(data.message || `Cannot delete plot: This plot has ${data.harvestCount} harvest collection(s) associated with it.`);
+        } else {
+          alert(data.error || 'Failed to delete plot');
+        }
+        return;
+      }
 
       setPlots(plots.filter((p) => p.id !== id));
       setDeleteConfirm(null);
+      alert('Plot deleted successfully');
     } catch (err) {
-      alert('Failed to delete plot');
+      alert('Failed to delete plot. Please try again.');
       console.error(err);
     }
   };

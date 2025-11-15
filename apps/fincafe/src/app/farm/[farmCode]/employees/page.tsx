@@ -178,10 +178,16 @@ export default function EmployeesPage({ params }: { params: Promise<{ farmCode: 
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <Link
-                      href={`/farm/${farmCode}/users/${employee.id}`}
+                      href={`/farm/${farmCode}/employees/${employee.id}`}
                       className="text-green-600 hover:text-green-900 mr-4"
                     >
-                      View
+                      View Profile
+                    </Link>
+                    <Link
+                      href={`/farm/${farmCode}/users/${employee.id}`}
+                      className="text-blue-600 hover:text-blue-900"
+                    >
+                      Edit
                     </Link>
                   </td>
                 </tr>

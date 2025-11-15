@@ -22,30 +22,30 @@ services:
       timeout: 5s
       retries: 5
 
-  # Next.js Application
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: fincafe-app
-    restart: unless-stopped
-    ports:
-      - "${APP_PORT:-3000}:3000"
-    environment:
-      - NODE_ENV=production
-      - DATABASE_URL=postgresql://fincafe:fincafe_dev_password@postgres:5432/fincafe_dev?schema=public
-      - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
-      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-your-secret-key-change-this}
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - fincafe-network
-    command: >
-      sh -c "
-        npx prisma migrate deploy &&
-        node apps/fincafe/server.js
-      "
+  # # Next.js Application
+  # app:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   container_name: fincafe-app
+  #   restart: unless-stopped
+  #   ports:
+  #     - "${APP_PORT:-3000}:3000"
+  #   environment:
+  #     - NODE_ENV=production
+  #     - DATABASE_URL=postgresql://fincafe:fincafe_dev_password@postgres:5432/fincafe_dev?schema=public
+  #     - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
+  #     - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-your-secret-key-change-this}
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #   networks:
+  #     - fincafe-network
+  #   command: >
+  #     sh -c "
+  #       npx prisma migrate deploy &&
+  #       node apps/fincafe/server.js
+  #     "
 
 volumes:
   postgres_data:

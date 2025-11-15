@@ -9,11 +9,10 @@ import {
   Title,
   Tooltip,
   Legend,
-  ArcElement,
   PointElement,
   LineElement,
 } from 'chart.js';
-import { Bar, Doughnut, Line } from 'react-chartjs-2';
+import { Bar, Line } from 'react-chartjs-2';
 
 // Register ChartJS components
 ChartJS.register(
@@ -23,7 +22,6 @@ ChartJS.register(
   Title,
   Tooltip,
   Legend,
-  ArcElement,
   PointElement,
   LineElement
 );
@@ -37,15 +35,6 @@ interface EmployeeStats {
   lastCollectionDate: string;
 }
 
-interface CropTypeStats {
-  cropTypeName: string;
-  totalKg: number;
-  collectionsCount: number;
-  averageKgPerCollection: number;
-  plotsCount: number;
-  employeesCount: number;
-}
-
 interface OverviewStats {
   totalKg: number;
   totalCollections: number;
@@ -55,14 +44,20 @@ interface OverviewStats {
   averageKgPerCollection: number;
 }
 
+interface WeeklyStats {
+  weekLabel: string;
+  totalKg: number;
+  collectionsCount: number;
+  averageKgPerCollection: number;
+}
+
 export default function HarvestStatsPage({ params }: { params: Promise<{ farmCode: string }> }) {
   const { farmCode } = use(params);
   const [loading, setLoading] = useState(true);
   const [employeeStats, setEmployeeStats] = useState<EmployeeStats[]>([]);
-  const [cropTypeStats, setCropTypeStats] = useState<CropTypeStats[]>([]);
   const [overviewStats, setOverviewStats] = useState<OverviewStats | null>(null);
+  const [weeklyStats, setWeeklyStats] = useState<WeeklyStats[]>([]);
   const [sortEmployeeBy, setSortEmployeeBy] = useState<'kg' | 'collections' | 'name'>('kg');
-  const [sortCropBy, setSortCropBy] = useState<'kg' | 'collections' | 'name'>('kg');
   
   // Date filter states
   const [startDate, setStartDate] = useState<string>('');
@@ -122,8 +117,8 @@ export default function HarvestStatsPage({ params }: { params: Promise<{ farmCod
       if (response.ok) {
         const data = await response.json();
         setEmployeeStats(data.employeeStats || []);
-        setCropTypeStats(data.cropTypeStats || []);
         setOverviewStats(data.overviewStats || null);
+        setWeeklyStats(data.weeklyStats || []);
       }
     } catch (error) {
       console.error('Error fetching harvest stats:', error);
@@ -178,12 +173,6 @@ export default function HarvestStatsPage({ params }: { params: Promise<{ farmCod
     return a.pickerName.localeCompare(b.pickerName);
   });
 
-  const sortedCropTypeStats = [...cropTypeStats].sort((a, b) => {
-    if (sortCropBy === 'kg') return b.totalKg - a.totalKg;
-    if (sortCropBy === 'collections') return b.collectionsCount - a.collectionsCount;
-    return a.cropTypeName.localeCompare(b.cropTypeName);
-  });
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-96">
@@ -197,7 +186,7 @@ export default function HarvestStatsPage({ params }: { params: Promise<{ farmCod
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Harvest Statistics</h1>
-        <p className="text-gray-600 mt-2">Overview of harvest metrics by employee and crop type</p>
+        <p className="text-gray-600 mt-2">Overview of harvest metrics by employee</p>
       </div>
 
       {/* Date Filter */}
@@ -378,63 +367,6 @@ export default function HarvestStatsPage({ params }: { params: Promise<{ farmCod
           </div>
         )}
 
-        {/* Crop Type Distribution Doughnut Chart */}
-        {sortedCropTypeStats.length > 0 && (
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Harvest Distribution by Crop Type</h3>
-            <div className="h-80 flex items-center justify-center">
-              <Doughnut
-                data={{
-                  labels: sortedCropTypeStats.map(s => s.cropTypeName),
-                  datasets: [
-                    {
-                      label: 'Total Kg',
-                      data: sortedCropTypeStats.map(s => s.totalKg),
-                      backgroundColor: [
-                        'rgba(34, 197, 94, 0.8)',
-                        'rgba(59, 130, 246, 0.8)',
-                        'rgba(251, 146, 60, 0.8)',
-                        'rgba(168, 85, 247, 0.8)',
-                        'rgba(236, 72, 153, 0.8)',
-                        'rgba(14, 165, 233, 0.8)',
-                      ],
-                      borderColor: [
-                        'rgba(34, 197, 94, 1)',
-                        'rgba(59, 130, 246, 1)',
-                        'rgba(251, 146, 60, 1)',
-                        'rgba(168, 85, 247, 1)',
-                        'rgba(236, 72, 153, 1)',
-                        'rgba(14, 165, 233, 1)',
-                      ],
-                      borderWidth: 2,
-                    },
-                  ],
-                }}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: {
-                      position: 'right',
-                    },
-                    tooltip: {
-                      callbacks: {
-                        label: function(context) {
-                          const label = context.label || '';
-                          const value = context.parsed || 0;
-                          const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
-                          const percentage = ((value / total) * 100).toFixed(1);
-                          return `${label}: ${value.toFixed(2)} kg (${percentage}%)`;
-                        }
-                      }
-                    }
-                  },
-                }}
-              />
-            </div>
-          </div>
-        )}
-
         {/* Collections Count by Employee */}
         {sortedEmployeeStats.length > 0 && (
           <div className="bg-white rounded-lg shadow p-6">
@@ -510,6 +442,94 @@ export default function HarvestStatsPage({ params }: { params: Promise<{ farmCod
                         callback: function(value) {
                           return value + ' kg';
                         }
+                      }
+                    },
+                  },
+                }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Weekly Harvest Trend */}
+        {weeklyStats.length > 0 && (
+          <div className="bg-white rounded-lg shadow p-6 lg:col-span-2">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Weekly Harvest Summary</h3>
+            <div className="h-80">
+              <Bar
+                data={{
+                  labels: weeklyStats.map(s => s.weekLabel),
+                  datasets: [
+                    {
+                      label: 'Total Kg',
+                      data: weeklyStats.map(s => s.totalKg),
+                      backgroundColor: 'rgba(34, 197, 94, 0.8)',
+                      borderColor: 'rgba(34, 197, 94, 1)',
+                      borderWidth: 1,
+                      yAxisID: 'y',
+                    },
+                    {
+                      label: 'Collections',
+                      data: weeklyStats.map(s => s.collectionsCount),
+                      backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                      borderColor: 'rgba(59, 130, 246, 1)',
+                      borderWidth: 1,
+                      yAxisID: 'y1',
+                    },
+                  ],
+                }}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  interaction: {
+                    mode: 'index',
+                    intersect: false,
+                  },
+                  plugins: {
+                    legend: {
+                      display: true,
+                      position: 'top',
+                    },
+                    tooltip: {
+                      callbacks: {
+                        afterBody: function(context) {
+                          const index = context[0].dataIndex;
+                          const avgKg = weeklyStats[index].averageKgPerCollection;
+                          return `Avg per Collection: ${avgKg.toFixed(2)} kg`;
+                        }
+                      }
+                    }
+                  },
+                  scales: {
+                    y: {
+                      type: 'linear',
+                      display: true,
+                      position: 'left',
+                      beginAtZero: true,
+                      title: {
+                        display: true,
+                        text: 'Total Kg'
+                      },
+                      ticks: {
+                        callback: function(value) {
+                          return value + ' kg';
+                        }
+                      }
+                    },
+                    y1: {
+                      type: 'linear',
+                      display: true,
+                      position: 'right',
+                      beginAtZero: true,
+                      title: {
+                        display: true,
+                        text: 'Collections'
+                      },
+                      grid: {
+                        drawOnChartArea: false,
+                      },
+                      ticks: {
+                        stepSize: 1,
                       }
                     },
                   },
@@ -620,114 +640,6 @@ export default function HarvestStatsPage({ params }: { params: Promise<{ farmCod
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
                     No employee data available
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Crop Type Stats */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900">Crop Type Performance</h2>
-            <p className="text-sm text-gray-600 mt-1">Harvest metrics by crop type</p>
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setSortCropBy('kg')}
-              className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
-                sortCropBy === 'kg'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Sort by Kg
-            </button>
-            <button
-              onClick={() => setSortCropBy('collections')}
-              className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
-                sortCropBy === 'collections'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Sort by Collections
-            </button>
-            <button
-              onClick={() => setSortCropBy('name')}
-              className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
-                sortCropBy === 'name'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Sort by Name
-            </button>
-          </div>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Crop Type
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Total Kg
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Collections
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Avg Kg/Collection
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Plots
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Employees
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {sortedCropTypeStats.map((stat, index) => (
-                <tr key={stat.cropTypeName} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10 bg-orange-100 rounded-full flex items-center justify-center">
-                        <svg className="w-6 h-6 text-orange-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{stat.cropTypeName}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right">
-                    <div className="text-sm font-semibold text-green-600">{stat.totalKg.toFixed(2)} kg</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right">
-                    <div className="text-sm text-gray-900">{stat.collectionsCount}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right">
-                    <div className="text-sm text-gray-900">{stat.averageKgPerCollection.toFixed(1)} kg</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right">
-                    <div className="text-sm text-gray-900">{stat.plotsCount}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right">
-                    <div className="text-sm text-gray-900">{stat.employeesCount}</div>
-                  </td>
-                </tr>
-              ))}
-              {sortedCropTypeStats.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
-                    No crop type data available
                   </td>
                 </tr>
               )}

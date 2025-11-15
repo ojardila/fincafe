@@ -39,6 +39,7 @@ model User {
   hireDate          DateTime?
   // Additional info
   nationality       String?
+  idType            String?   // Type of ID: national_id, passport, foreign_id, etc.
   idNumber          String?
   
   password          String

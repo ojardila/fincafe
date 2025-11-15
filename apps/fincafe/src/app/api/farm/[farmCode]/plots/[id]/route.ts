@@ -136,6 +136,22 @@ export async function DELETE(
 
     const farmDb = getFarmDatabase(farm.databaseName);
 
+    // Check if plot has any harvest collections
+    const harvestCount = await farmDb.harvestCollection.count({
+      where: { plotId: id },
+    });
+
+    if (harvestCount > 0) {
+      return NextResponse.json(
+        { 
+          error: 'Cannot delete plot with harvest collections',
+          message: `This plot has ${harvestCount} harvest collection(s) associated with it. Please remove or reassign these collections before deleting the plot.`,
+          harvestCount 
+        },
+        { status: 400 }
+      );
+    }
+
     // Soft delete by setting isActive to false
     const plot = await farmDb.plot.update({
       where: { id },

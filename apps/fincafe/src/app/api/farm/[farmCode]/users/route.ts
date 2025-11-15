@@ -94,7 +94,33 @@ export async function POST(
 ) {
   try {
     const body = await request.json();
-    const { email, name, password, roleId } = body;
+    const { 
+      email, 
+      name, 
+      firstName,
+      lastName,
+      phone,
+      birthDate,
+      password, 
+      roleId,
+      // Address Information
+      address,
+      city,
+      state,
+      country,
+      postalCode,
+      // Emergency Contact
+      emergencyContact,
+      emergencyPhone,
+      // Employment Information
+      position,
+      department,
+      hireDate,
+      // Additional Information
+      nationality,
+      idType,
+      idNumber,
+    } = body;
 
     // Validate required fields
     if (!email || !password) {
@@ -125,13 +151,39 @@ export async function POST(
 
     // Create user in farm database
     try {
+      const createData: any = {
+        email,
+        password,
+        name: name || null,
+        firstName: firstName || null,
+        lastName: lastName || null,
+        phone: phone || null,
+        birthDate: birthDate ? new Date(birthDate) : null,
+        // Address Information
+        address: address || null,
+        city: city || null,
+        state: state || null,
+        country: country || null,
+        postalCode: postalCode || null,
+        // Emergency Contact
+        emergencyContact: emergencyContact || null,
+        emergencyPhone: emergencyPhone || null,
+        // Employment Information
+        position: position || null,
+        department: department || null,
+        hireDate: hireDate ? new Date(hireDate) : null,
+        // Additional Information
+        nationality: nationality || null,
+        idType: idType || null,
+        idNumber: idNumber || null,
+      };
+
+      if (roleId) {
+        createData.roleId = roleId;
+      }
+
       const user = await farmDb.user.create({
-        data: {
-          email,
-          name,
-          password,
-          ...(roleId && { roleId }),
-        },
+        data: createData,
         include: {
           role: {
             select: {

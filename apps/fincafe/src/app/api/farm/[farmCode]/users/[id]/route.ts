@@ -53,7 +53,33 @@ export async function PATCH(
 ) {
   try {
     const body = await request.json();
-    const { email, name, password, roleId } = body;
+    const { 
+      email, 
+      name, 
+      firstName,
+      lastName,
+      phone,
+      birthDate,
+      password, 
+      roleId,
+      // Address Information
+      address,
+      city,
+      state,
+      country,
+      postalCode,
+      // Emergency Contact
+      emergencyContact,
+      emergencyPhone,
+      // Employment Information
+      position,
+      department,
+      hireDate,
+      // Additional Information
+      nationality,
+      idType,
+      idNumber,
+    } = body;
 
     const farm = await prisma.farm.findUnique({
       where: { code: params.farmCode },
@@ -72,14 +98,42 @@ export async function PATCH(
 
     const farmDb = getFarmDatabase(farm.databaseName);
 
+    const updateData: any = {};
+    
+    // Only add fields that are provided
+    if (email !== undefined) updateData.email = email;
+    if (name !== undefined) updateData.name = name || null;
+    if (firstName !== undefined) updateData.firstName = firstName || null;
+    if (lastName !== undefined) updateData.lastName = lastName || null;
+    if (phone !== undefined) updateData.phone = phone || null;
+    if (birthDate !== undefined) updateData.birthDate = birthDate ? new Date(birthDate) : null;
+    if (password) updateData.password = password;
+    if (roleId !== undefined) updateData.roleId = roleId || null;
+    
+    // Address Information
+    if (address !== undefined) updateData.address = address || null;
+    if (city !== undefined) updateData.city = city || null;
+    if (state !== undefined) updateData.state = state || null;
+    if (country !== undefined) updateData.country = country || null;
+    if (postalCode !== undefined) updateData.postalCode = postalCode || null;
+    
+    // Emergency Contact
+    if (emergencyContact !== undefined) updateData.emergencyContact = emergencyContact || null;
+    if (emergencyPhone !== undefined) updateData.emergencyPhone = emergencyPhone || null;
+    
+    // Employment Information
+    if (position !== undefined) updateData.position = position || null;
+    if (department !== undefined) updateData.department = department || null;
+    if (hireDate !== undefined) updateData.hireDate = hireDate ? new Date(hireDate) : null;
+    
+    // Additional Information
+    if (nationality !== undefined) updateData.nationality = nationality || null;
+    if (idType !== undefined) updateData.idType = idType || null;
+    if (idNumber !== undefined) updateData.idNumber = idNumber || null;
+
     const user = await farmDb.user.update({
       where: { id: params.id },
-      data: {
-        ...(email && { email }),
-        ...(name !== undefined && { name }),
-        ...(password && { password }),
-        ...(roleId !== undefined && { roleId }),
-      },
+      data: updateData,
       include: {
         role: {
           select: {
